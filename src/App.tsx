@@ -14,11 +14,22 @@ interface CollectionStats {
   floor: number;
   volume: number;
 }
+interface Token {
+  tokenId: string;
+  contract: {
+    address: string;
+    symbol: string;
+    name: string;
+  };
+  images: {
+    url: string;
+  }[];
+}
 interface WalletTokensQuery {
   wallet: {
     ensName: string;
     address: string;
-    tokens: Connection<{ tokenId: string, contract: { address: string, symbol: string, name: string }}>
+    tokens: Connection<Token>;
   } | null;
 }
 
@@ -31,11 +42,18 @@ const tokensQuery = gql`
         edges {
           node {
             tokenId
-            contract {
-              address
-              ... on ERC721Contract {
-                symbol
-                name
+            ... on ERC721Token {
+              contract {
+                address
+                ... on ERC721Contract {
+                  symbol
+                  name
+                }
+              }
+              ... on ERC721Token {
+                images {
+                  url
+                }
               }
             }
           }
@@ -97,10 +115,7 @@ function App() {
       });
     }));
   
-    console.log('collectionStatsData: ', collectionStatsData);
     const collectionStats = collectionStatsData.map(data => data.data?.contract).filter(v => v !== undefined) as CollectionWithStats[];
-
-    console.log(collectionStats);
     setCollectionsWithStats(collectionStats);
   }
 
@@ -113,13 +128,17 @@ function App() {
         Search!
       </button> 
       <p>{data?.wallet?.address ?? "not found"}</p>
-      {data?.wallet?.tokens.edges.map(token => {
-        const contract = token.node.contract;
-        const stats = collectionsWithStats.find((collection) => collection.address === token.node.contract.address)?.stats;
+      {data?.wallet?.tokens.edges.map(e => {
+        const token = e.node;
+        const contract = token.contract;
+        const stats = collectionsWithStats.find((collection) => collection.address === token.contract.address)?.stats;
+        const imageUrl = token.images.find(i => !!i.url)?.url;
 
         return (
           <p>
             <h1>{contract.name}</h1>
+            <h2>{contract.symbol}#{token.tokenId}</h2>
+            {imageUrl && <img src={imageUrl} alt="lol" />}
             <p>Floor: {stats?.floor}</p>
             <p>Volume: {stats?.volume}</p>
           </p>
