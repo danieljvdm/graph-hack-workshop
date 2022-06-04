@@ -18,24 +18,14 @@ function Wallets() {
   const [getWalletTokens, { data, client }] =
     useLazyQuery<WalletTokensQuery>(tokensQuery);
 
-  useEffect(() => {
-    fetchCollectionStats();
-  }, [data?.wallet?.tokens]);
-
-  const fetchCollectionStats = async () => {
+  const fetchCollectionStats = async (collectionAddresses: string[]) => {
     const oneDayAgo = new Date(new Date().setDate(new Date().getDate() - 1));
     const now = new Date();
 
-    console.log(data);
-    const collectionAddresses = (data?.wallet?.tokens.edges ?? []).map(
-      (e) => e.node.contract.address
-    );
-    console.log(collectionAddresses);
     if (collectionAddresses.length === 0) return;
 
     const collectionStatsData = await Promise.all(
       collectionAddresses.map((address) => {
-        console.log("ADDRESS: ", address);
         return client.query<CollectionStatsQuery>({
           query: collectionStatsQuery,
           fetchPolicy: "network-only",
@@ -53,6 +43,7 @@ function Wallets() {
     const collectionStats = collectionStatsData
       .map((data) => data.data?.contract)
       .filter((v) => v !== undefined) as CollectionWithStats[];
+      
     setCollectionsWithStats(collectionStats);
   };
 
@@ -67,7 +58,12 @@ function Wallets() {
           />
           <button
             onClick={async () => {
-              await getWalletTokens({ variables: { ensName } });
+              const { data } = await getWalletTokens({ variables: { ensName } });
+              const collectionAddresses = (data?.wallet?.tokens.edges ?? []).map(
+                (e) => e.node.contract.address
+              );
+
+              await fetchCollectionStats(collectionAddresses);
             }}
           >
             Search!
@@ -87,7 +83,7 @@ function Wallets() {
         const imageUrl = token.images.find((i) => !!i.url)?.url;
 
         return (
-          <p className="card">
+          <div className="card" key={`${e.node.tokenId}${e.node.contract.address}`}>
             <div className="top">
               <div>
                 <h1>{contract.name}</h1>
@@ -97,12 +93,12 @@ function Wallets() {
                 <p className="val">
                   Floor:
                   <span>
-                    {stats?.floor ? `Ξ ${stats?.floor}` : "Not enough data"}
+                    {stats?.floor ? `Ξ${stats.floor}` : "Not enough data"}
                   </span>
                 </p>
                 <p className="val">
                   Volume:{" "}
-                  <span>{stats?.volume ? `Ξ ${stats?.volume}` : "N/A"}</span>
+                  <span>{stats?.volume ? `Ξ${stats.volume}` : "N/A"}</span>
                 </p>
               </div>
               {imageUrl && (
@@ -111,7 +107,7 @@ function Wallets() {
                 </div>
               )}
             </div>
-          </p>
+          </div>
         );
       })}
     </div>
