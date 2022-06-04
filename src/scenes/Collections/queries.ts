@@ -27,7 +27,7 @@ export const trendingCollectionsQuery = gql`
 
 export const searchCollectionsQuery = gql`
   query SearchCollections($query: String!) {
-    contracts(filter: { name: { icontains: $query }}) {
+    contracts(filter: { name: { icontains: $query }}, orderBy: VOLUME, orderDirection: DESC) {
       edges {
         node {
           address
