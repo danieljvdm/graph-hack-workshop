@@ -22,6 +22,13 @@ code {
   padding: 12px;
 }
 
+.nav {
+  display: flex;
+  min-width: 600px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .nav a {
   color: white;
   padding: 8px 12px;
@@ -32,7 +39,7 @@ code {
   font-weight: 500;
   opacity: .75;
 }
-.nav {
+.nav .links {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
